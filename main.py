@@ -8,6 +8,8 @@ import statsmodels.api as sm
 from statsmodels import regression
 import matplotlib.pyplot as plt
 
+import gui_start
+
 
 def alpha_vantage(ticker):
     API_KEY = '0S3RCDO1A4TB4P0Y'
