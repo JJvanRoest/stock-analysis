@@ -113,6 +113,9 @@ def CAPM_calculation():
 
 
 def price_dividend():
+    # Original formula P_0 = DIV_1 / (r - g)
+    # Rewritten to return the growth factor
+
     P_0 = 0
     DIV_1 = 0
     r = 0
@@ -126,6 +129,9 @@ def price_dividend():
     return g
 
 def price_eps():
+    # Original formula P_0 = EPS_1 / r + PVGO
+    # Rewritten to return the Present Value of Growth Opportunities
+
     P_0 = 0
     EPS_1 = 0
     r = 0 
@@ -152,7 +158,7 @@ if __name__ == "__main__":
     global save_data
     
     save_data = False
-    plot = True
+    plot = False
 
     stock_name = 'AAPL'
     market_name = '^GSPC'
@@ -163,8 +169,6 @@ if __name__ == "__main__":
     print(beta_calculation_np(stock, market))
     print(beta_calculation(stock, market))
     print(r_squared_calc(stock, market))
-
-    
 
     print('---------------------------')
 
@@ -187,16 +191,5 @@ if __name__ == "__main__":
         plt.savefig(f"./plots/{file_name}.jpg")
 
 
-    # goog = [1551.36, 1591.04, 1634.18, 1482.96, 1413.61, 1428.92, 1348.66, 1162.81, 1339.33, 1434.23, 1337.02, 1304.96, 1260.11, 1219.0, 1188.1, 1216.68, 1080.91, 1103.63, 1188.48, 1173.31, 1119.92, 1116.37, 1035.61, 1094.43, 1076.77, 1193.47, 1218.19, 1217.26, 1115.65, 1084.99, 1017.33, 1031.79, 1104.73, 1169.94, 1046.4, 1021.41, 1016.64, 959.11, 939.33, 930.5, 908.73, 964.86, 905.96, 829.56, 823.21, 796.79, 771.82, 758.04, 784.54, 777.29, 767.05, 768.79, 692.1, 735.72, 693.01, 744.95, 697.77, 742.95, 758.88, 742.6, 710.81]
-
-    # market = [3359.51, 3426.96, 3500.31, 3271.12, 3100.29, 3044.31, 2912.43, 2584.59, 2954.22, 3225.52, 3230.78, 3140.98, 3037.56, 2976.74, 2926.46, 2980.38, 2941.76, 2752.06, 2945.83, 2834.4, 2784.49, 2704.1, 2506.85, 2760.17, 2711.74, 2913.98, 2901.52, 2816.29, 2718.37, 2705.27, 2648.05, 2640.87, 2713.83, 2823.81, 2673.61, 2584.84, 2575.26, 2519.36, 2471.65, 2470.3, 2423.41, 2411.8, 2384.2, 2362.72, 2363.64, 2278.87, 2238.83, 2198.81, 2126.15, 2168.27, 2170.95, 2173.6, 2098.86, 2096.95, 2065.3, 2059.74, 1932.23, 1940.24, 2043.94, 2080.41, 2079.36]
-
-    # print(beta_calculation_np(goog, market))
-    # print(beta_calculation(goog, market))
-
 
     # alpha_vantage(ticker)
-
-
-
-# https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=IBM&outputsize=full&apikey=demo
