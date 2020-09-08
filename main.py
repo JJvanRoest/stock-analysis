@@ -82,6 +82,11 @@ def covariance_calc(stock, market):
 
     return cov
 
+def r_squared_calc(stock, market):
+    correlation_matrix = np.corrcoef(stock, market)
+    correlation_xy = correlation_matrix[0,1]
+    r_squared = correlation_xy**2
+    return r_squared
 
 
 def CAPM_calculation():
@@ -137,13 +142,14 @@ if __name__ == "__main__":
     save_data = True
     plot = False
 
-    stock_name = 'TSLA'
+    stock_name = 'AAPL'
 
     stock = yahoo_fin(stock_name)
     gspc = yahoo_fin('^GSPC')
     print(beta_calculation_OLS(gspc, stock))
     print(beta_calculation_np(stock, gspc))
     print(beta_calculation(stock, gspc))
+    print(r_squared_calc(stock, gspc))
 
     print('---------------------------')
 
