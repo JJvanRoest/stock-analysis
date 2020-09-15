@@ -27,7 +27,7 @@ def alpha_vantage(ticker):
 
 def yahoo_fin(ticker):
     stock = yf.Ticker(ticker)
-    history = stock.history(period='5y', interval='1mo')
+    history = stock.history(period='3y', interval='1mo')
     history.sort_index(ascending=False, inplace=True)
     # print(history.dropna(axis='rows'))
     # print(history.Close.tolist())
@@ -177,7 +177,7 @@ def get_finance(stock_name, market_name):
     print(f"Beta (Bare): {beta_calculation(stock, market)}")
     print(f"Beta (Yahoo): {beta_stock}")
     print(f"R^2 (calculated): {r_squared_calc(stock, market)}")
-    print(f"R^2 (Regression): {beta_calculation_OLS(market, stock)[2]}")
+    print(f"R^2 (OLS Regression): {beta_calculation_OLS(market, stock)[2]}")
 
     print('---------------------------')
 
@@ -191,8 +191,8 @@ if __name__ == "__main__":
     plot = True
 
     stock_names = ['F', 'TSLA', 'BKNG', 'EXPE']
-    market_name = '^GSPC'
-
+    # market_name = '^GSPC'
+    market_name = '^SP500TR'
     for stock_name in stock_names:
         stock, market = get_finance(stock_name, market_name)
     # stock = yahoo_fin(stock_name)
