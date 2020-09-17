@@ -3,13 +3,14 @@ import scipy.stats as si
 import mibian
 import math
 
+
 class OptionPricing(object):
     pass
 
     def __init__(self):
         S_0 = 419.62
         K = 410
-        T = 4           # Measured in days
+        T = 29           # Measured in days
         r = 0.67
         sigma = 99.58
         div = 0
@@ -17,14 +18,19 @@ class OptionPricing(object):
         h = 0.25
         N = 10
 
-        print(self.call_put_pricing(S_0, K, T, r, sigma, div, self.option))
-        print(self.call_put_pricing_mibian(S_0, K, T, r, sigma, div, self.option))
+        # Choose between expected or current option value
+        self.value_type = 'expect_value'
+
+        
         # print(self.binomial_option_tree(900, 900, T, 0.0025, 0.25784, h, N))
         # print(self.binomial_option_tree(S_0, K, T, r, sigma, h, N))
         detailed_list = self.binomial_option_tree(S_0, K, T, r, sigma, h, N)
-        print(self.print_tree(detailed_list))
-
-
+        self.print_tree(detailed_list)
+        dash = '-' * 40
+        print('\n')
+        print(dash)
+        print(f"Calculated BS-score (formula): {self.call_put_pricing(S_0, K, T, r, sigma, div, self.option)}")
+        print(f"Calculated BS-score (Mibian): {self.call_put_pricing_mibian(S_0, K, T, r, sigma, div, self.option)}")
 
     def call_put_pricing(self, S_0, K, T, r, sigma, div, option='call'):
         """
@@ -75,7 +81,7 @@ class OptionPricing(object):
     def binomial_option_tree(self, S_0, K, T, r, sigma, h, N):
         r = r / 100
         sigma = sigma / 100
-        h = 1 / 365
+        h = T / 365
         u, d = self.std_dev_up_down(sigma, h)
         p = self.calculate_p(r, u, d)
 
@@ -83,18 +89,19 @@ class OptionPricing(object):
         layer_list.append([S_0])
         detailed_tree = []
 
-        for i in range(N):            # -1 to let N reflect the amnt of layers
+        for i in range(N):
             prev_prices = layer_list[i]
-            new_prices =  set()
+            new_prices = set()
+            detailed_tree_layer = []
             for price in prev_prices:
-                next_up, next_down = self.calculate_next_prices(price, u, d)             
+                next_up, next_down = self.calculate_next_prices(price, u, d)
                 new_prices.add(next_up)
                 new_prices.add(next_down)
 
                 node = {}
                 node['layer'] = i
                 node['price'] = price
-                expect_value = p * (price - K)
+
                 max_stock = next_up
                 min_stock = next_down
                 max_option = next_up - K
@@ -108,8 +115,16 @@ class OptionPricing(object):
                 stock_spread = max_stock - min_stock
                 option_spread = max_option - min_option
 
-                node['expect_value'] = expect_value
-                node['current_value'] = expect_value / (1 + r)
+                expected_value = (p * max_option) + (1-p * min_option)
+                if self.option == 'call':
+                    if expected_value < 0:
+                        expected_value = 0
+                elif self.option == 'put':
+                    if expected_value > 0:
+                        expected_value = 0
+
+                node['expect_value'] = expected_value
+                node['current_value'] = expected_value / (1 + r)
                 try:
                     node['option_delta'] = option_spread / stock_spread
                 except ZeroDivisionError:
@@ -119,11 +134,27 @@ class OptionPricing(object):
                 node['min_option'] = min_option
                 node['max_option'] = max_option
                 node['stock_spread'] = stock_spread
-                node['option_spread'] = option_spread   
-                detailed_tree.append(node)
+                node['option_spread'] = option_spread
+                detailed_tree_layer.append(node)
 
-            sorted_new_prices = sorted(new_prices)         
+            sorted_new_prices = sorted(new_prices)
             layer_list.append(sorted(new_prices))
+            detailed_tree.append(detailed_tree_layer)
+
+        last_tree_layer = []
+        for price in layer_list[-1]:
+            last_node = {}
+            last_node['layer'] = len(layer_list) - 1
+            last_node['price'] = price
+
+            expected_value = p * (price - K)
+            if expected_value < 0:
+                expected_value = 0
+            current_value = expected_value / (1 + r)
+            last_node['expect_value'] = expected_value
+            last_node['current_value'] = current_value
+            last_tree_layer.append(last_node)
+        detailed_tree.append(last_tree_layer)
         return detailed_tree
 
     def print_tree(self, detailed_list):
@@ -136,47 +167,48 @@ class OptionPricing(object):
         layer_options = []
         layer_deltas = []
 
-        for node in detailed_list:
-            
-            current_layer = node['layer']
-            if last_layer < current_layer:
-                price_list.append(layer_prices)
-                option_list.append(layer_options)
-                delta_list.append(layer_deltas)
+        node_index = 0
+        for layer in detailed_list:
+            layer_prices = []
+            layer_options = []
+            layer_deltas = []
 
-                layer_prices = []
-                layer_options = []
-                layer_deltas = []
+            for node in layer:
+                current_layer = node['layer']
 
-            layer_prices.append(node['price'])
-            layer_options.append(node['expect_value'])
-            layer_deltas.append(node['option_delta'])
-    
-            last_layer = current_layer
-        
-        for i in range(len(price_list)):
-            dash = '-' * 60
-            print(dash)
-            print(f"Layer: {i}")
-            print(dash)
-            price_string = ''
-            for j in range(len(price_list[i])):
-                price = price_list[i][j]
-                price_string += f'{price}     '
-            print(price_string)
+                layer_prices.append(node['price'])
+                layer_options.append(node[self.value_type])
+                try:
+                    layer_deltas.append(node['option_delta'])
+                except KeyError:            # Last row does not contain option_delta header
+                    layer_deltas = []
+            self.format_prints(current_layer, layer_prices,
+                               layer_options, layer_deltas)
 
-            option_string = ''
-            for j in range(len(price_list[i])):
-                option = round(option_list[i][j], 2)
-                option_string += f'{option}     '
-            print(option_string)
+    def format_prints(self, current_layer, price_list, option_list, delta_list):
+        # for i in range(len(price_list)):
+        dash = '-' * 60
+        print(dash)
+        print(f"Layer: {current_layer}")
+        print(dash)
+        price_string = 'Expected stock prices: '
+        for j in range(len(price_list)):
+            price = price_list[j]
+            price_string += '{}{:<4}'.format(price, ' ')
+        print(price_string)
 
-            delta_string = ''
-            for j in range(len(price_list[i])):
-                delta = round(delta_list[i][j], 5)
-                delta_string += f'{delta}     '
-            print(delta_string)
-    
+        option_string = 'Expected option prices: '
+        for j in range(len(option_list)):
+            option = round(option_list[j], 2)
+            option_string += '{}{:<4}'.format(option, ' ')
+        print(option_string)
+
+        delta_string = 'Calculated delta values: '
+        for j in range(len(delta_list)):
+            delta = round(delta_list[j], 5)
+            delta_string += '{}{:<4}'.format(delta, ' ')
+        print(delta_string)
+
     def std_dev_up_down(self, sigma, h):
         """
         Calculate the up and down changes from the standard deviation of a stock
@@ -208,11 +240,6 @@ class OptionPricing(object):
         next_up = S_0 * u
         next_down = S_0 * d
         return round(next_up, 2), round(next_down, 2)
-    
-        
-
-
 
 if __name__ == "__main__":
     option_pricer = OptionPricing()
-    
