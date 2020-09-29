@@ -132,6 +132,6 @@ dmypy.json
 .vscode/
 
 # Created files
-/json/*
-/plots/*
-/scatter_plots/*
+*/json/*
+*/plots/*
+*/scatter_plots/*
